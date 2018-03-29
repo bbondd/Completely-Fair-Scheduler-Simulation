@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <math.h>
 
 /*
 int counter = 0;
@@ -11,15 +13,15 @@ void sigint_handler( int signo)
 printf( "알람 발생 %d!!\n", counter++);
 alarm(1);
 }*/
-typedef pid_t;
-char* process_file_path = "./ku_app";
-#define nice_number 5
 
 typedef struct _process_node {
 	pid_t pid;
 	int nice_value;
 	double virtual_runtime;
 	char* execution_argument;
+
+	struct timeval last_executed_time;
+
 	struct _process_node* next_node;
 	struct _process_node* previous_node;
 }process_node;
@@ -28,6 +30,13 @@ typedef struct _process_queue {
 	process_node* head;
 	process_node* tail;
 }process_queue;
+
+process_queue* queue;
+process_node* currunt_running_node;
+
+typedef pid_t;
+char* process_file_path = "./ku_app";
+#define nice_number 5
 
 process_node* new_process_node(pid_t pid, int nice_value, char* execution_argument) {
 	process_node* node = (process_node*)calloc(1, sizeof(process_node));
@@ -39,6 +48,7 @@ process_node* new_process_node(pid_t pid, int nice_value, char* execution_argume
 	return node;
 }
 
+/*
 process_node* insert_process_node_by_index(process_queue* queue, process_node* node, int index) {
 	process_node* insert_location = queue->head->next_node;
 	for (int i = 0; i < index; i++) insert_location = insert_location->next_node;
@@ -52,7 +62,7 @@ process_node* insert_process_node_by_index(process_queue* queue, process_node* n
 	node->next_node = next_node;
 
 	return node;
-}
+}*/
 
 process_node* insert_process_node(process_queue* queue, process_node* node) {
 	process_node* insert_location;
@@ -71,6 +81,20 @@ process_node* insert_process_node(process_queue* queue, process_node* node) {
 	node->next_node = next_node;
 
 	return node;
+}
+
+process_node* take_out_first_node(process_queue* queue) {
+	process_node* first_node = queue->head->next_node;
+	process_node* previous_node = queue->head;
+	process_node* next_node = queue->head->next_node->next_node;
+
+	previous_node->next_node = next_node;
+	next_node->previous_node = previous_node;
+
+	first_node->previous_node = NULL;
+	first_node->next_node = NULL;
+
+	return first_node;
 }
 
 process_queue* new_process_queue() {
@@ -95,33 +119,47 @@ pid_t new_process(char* execution_argument) {
 
 process_queue* initialize_process_queue(process_queue* queue, int* process_numbers) {
 	int current_char = 'A';
-	for (int i = 0; i < nice_number; i++) {
-		char* execution_argument = (char*)calloc(2, sizeof(char));
-		execution_argument[0] = current_char + i;
-		pid_t pid = new_process(execution_argument);
-		
-		process_node* node = new_process_node(pid, i - 2, execution_argument);
-		insert_process_node(queue, node);
-	}
+	for (int i = 0; i < nice_number; i++) 
+		for (int j = 0; j < process_numbers[i]; j++) {
+			char* execution_argument = (char*)calloc(2, sizeof(char));
+			execution_argument[0] = current_char;
+			current_char++;
+			pid_t pid = new_process(execution_argument);
+
+			process_node* node = new_process_node(pid, i - 2, execution_argument);
+			insert_process_node(queue, node);
+		}
 
 	return queue;
 }
 
 
-
+void reschedule() {
+	struct timeval current_time;
+	gettimeofday(&current_time, NULL);
+	kill(currunt_running_node->pid, SIGSTOP);
+	
+	currunt_running_node->virtual_runtime +=
+		(current_time.tv_sec * 1000
+			+ current_time.tv_usec
+			- currunt_running_node->last_executed_time.tv_sec * 1000
+			- currunt_running_node->last_executed_time.tv_usec)
+		* pow(1.25, currunt_running_node->nice_value);
+}
 
 
 
 int main(int argc, char* argv[])
 {
 	int process_numbers[nice_number];
-	int current_char = 'A';
 	for (int i = 0; i < nice_number; i++) process_numbers[i] = atoi(argv[i + 1]);
-
 	int time_slice_number = atoi(argv[nice_number + 1]);
 	
-	process_queue* queue = new_process_queue();
+	queue = new_process_queue();
 	initialize_process_queue(queue, process_numbers);
+
+	sleep(1);
+	kill(queue->head->next_node->pid, SIGCONT);
 
 	for (process_node* node = queue->head->next_node;
 		node != queue->tail;
@@ -131,6 +169,9 @@ int main(int argc, char* argv[])
 		printf("my nice : %d\n", node->nice_value);
 		printf("my vruntim : %f\n", node->virtual_runtime);
 	}
+
+	currunt_running_node = queue->head->next_node;
+	reschedule();
 
 	/*
 
@@ -145,4 +186,6 @@ int main(int argc, char* argv[])
 	signal(SIGALRM, sigint_handler);
 	alarm(1);
 	while (1);*/
+
+	while (1);
 }
