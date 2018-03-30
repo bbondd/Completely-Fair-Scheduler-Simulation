@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 void main(int argc, char* argv[]) {
-	kill(getpid(), SIGSTOP);
+	//kill(getpid(), SIGSTOP);
 
 	while (1) {
 		printf("%c\n", argv[1][0]);
