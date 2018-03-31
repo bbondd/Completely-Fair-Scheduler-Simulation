@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{A429232D-4B67-49C9-8DC8-D97D576BE1E2}</ProjectGuid>
+    <ProjectGuid>{CE978F26-2C23-406F-98BD-29ACCF84CE44}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>CFSSimulation</RootNamespace>
+    <RootNamespace>CFSsimulation</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -147,13 +147,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ku_cfs.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cfs.c" />
-    <ClCompile Include="CFS_Simulation.cpp" />
-    <ClCompile Include="print_char.c" />
+    <ClCompile Include="CFS_simulation.cpp" />
+    <ClCompile Include="ku_cfs.c" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
